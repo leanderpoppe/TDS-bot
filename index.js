@@ -1,25 +1,43 @@
-require('dotenv').config();
+const { token, prefix } = require('./config.json');
 const Discord = require('discord.js');
 const bot = new Discord.Client();
-const TOKEN = process.env.TOKEN;
+bot.commands = new Discord.Collection();
+const botCommands = require('./commands');
 
-bot.login(TOKEN);
+Object.keys(botCommands).map(key => {
+    bot.commands.set(botCommands[key].name, botCommands[key]);
+});
+
+bot.login(token);
 
 bot.on('ready', () => {
-  console.info(`Logged in as ${bot.user.tag}!`);
+    console.info(`Logged in as ${bot.user.tag}!`);
+    bot.user.setPresence({
+        status: "online",  //You can show online, idle....
+        game: {
+            name: "I am a useless bot :(",  //The message shown
+            type: "PLAYING" //PLAYING: WATCHING: LISTENING: STREAMING:
+        }
+    });
 });
 
 bot.on('message', msg => {
-  if (msg.content === 'ping') {
-    msg.reply('pong');
-    msg.channel.send('pong');
-
-  } else if (msg.content.startsWith('!kick')) {
-    if (msg.mentions.users.size) {
-      const taggedUser = msg.mentions.users.first();
-      msg.channel.send(`You wanted to kick: ${taggedUser.username}`);
-    } else {
-      msg.reply('Please tag a valid user!');
+    if (!msg.content.startsWith(prefix) || msg.author.bot) {
+        return;
     }
-  }
+
+    const args = msg.content.slice(prefix.length).trim().split(/ +/);
+    const command = args.shift().toLowerCase();
+    console.info(`Called command: ${command}`);
+
+    if (!bot.commands.has(command)) {
+        return;
+    }
+
+    try {
+        bot.commands.get(command).execute(msg, args);
+    } catch (error) {
+        console.error(error);
+        msg.reply('there was an error trying to execute that command!');
+    }
 });

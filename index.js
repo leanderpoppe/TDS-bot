@@ -1,5 +1,8 @@
+// Environment variables
+require('dotenv').config();
+const token = process.env.TOKEN;
 // Config imports
-const {token, prefix} = require('./config.json');
+const {prefix} = require('./config.json');
 // Discord imports
 const Discord = require('discord.js');
 const client = new Discord.Client();

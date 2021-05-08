@@ -1,43 +1,53 @@
-const { token, prefix } = require('./config.json');
+// Config imports
+const {token, prefix} = require('./config.json');
+// Discord imports
 const Discord = require('discord.js');
-const bot = new Discord.Client();
-bot.commands = new Discord.Collection();
-const botCommands = require('./commands');
+const client = new Discord.Client();
+client.commands = new Discord.Collection();
+// Other imports
+const fs = require('fs'); // Node.js FileSystem
 
-Object.keys(botCommands).map(key => {
-    bot.commands.set(botCommands[key].name, botCommands[key]);
-});
+// Gather all command js files and ass them toe the client.commands
+const commandFolders = fs.readdirSync('./commands');
+for (const folder of commandFolders) {
+    const commandFiles = fs.readdirSync(`./commands/${folder}`).filter(file => file.endsWith('.js'));
+    for (const file of commandFiles) {
+        const command = require(`./commands/${folder}/${file}`);
+        // set a new item in the Collection
+        // with the key as the command name and the value as the exported module
+        client.commands.set(command.name, command);
+    }
+}
 
-bot.login(token);
+client.login(token);
 
-bot.on('ready', () => {
-    console.info(`Logged in as ${bot.user.tag}!`);
-    bot.user.setPresence({
-        status: "online",  //You can show online, idle....
-        game: {
-            name: "I am a useless bot :(",  //The message shown
-            type: "PLAYING" //PLAYING: WATCHING: LISTENING: STREAMING:
-        }
+client.on('ready', () => {
+    console.info(`Logged in as ${client.user.tag}!`);
+    client.user.setActivity('?[command]. I am a useless bot :(', {
+        status: "online", //You can show online, idle....
+        type: "PLAYING" //PLAYING: WATCHING: LISTENING: STREAMING:
     });
 });
 
-bot.on('message', msg => {
-    if (!msg.content.startsWith(prefix) || msg.author.bot) {
-        return;
+client.on('message', message => {
+    if (message.mentions.has(client.user)) {
+        message.reply('How DARE you ping the almighty bot D:<');
     }
 
-    const args = msg.content.slice(prefix.length).trim().split(/ +/);
-    const command = args.shift().toLowerCase();
-    console.info(`Called command: ${command}`);
+    // Check if message starts with prefix
+    if (!message.content.startsWith(prefix) || message.author.bot) return;
 
-    if (!bot.commands.has(command)) {
-        return;
-    }
+    const args = message.content.slice(prefix.length).trim().split(/ +/);
+    const commandName = args.shift().toLowerCase();
+    // console.info(`Called command: ${commandName}`);
+    if (!client.commands.has(commandName)) return;
+
+    const command = client.commands.get(commandName);
 
     try {
-        bot.commands.get(command).execute(msg, args);
+        command.execute(message, args);
     } catch (error) {
         console.error(error);
-        msg.reply('there was an error trying to execute that command!');
+        message.reply('there was an error trying to execute that command!');
     }
 });

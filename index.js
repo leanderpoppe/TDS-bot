@@ -1,8 +1,6 @@
 // Environment variables
 require('dotenv').config();
-const token = process.env.TOKEN;
-// Config imports
-const {prefix} = require('./config.json');
+const {node_env, token, prefix} = require('./config');
 // Discord imports
 const Discord = require('discord.js');
 const client = new Discord.Client();
@@ -26,10 +24,17 @@ client.login(token);
 
 client.on('ready', () => {
     console.info(`Logged in as ${client.user.tag}!`);
-    client.user.setActivity('?[command]. I am a useless bot :(', {
-        status: "online", //You can show online, idle....
-        type: "PLAYING" //PLAYING: WATCHING: LISTENING: STREAMING:
-    });
+    if (node_env === 'production') {
+        client.user.setActivity('?[command]. I am a useless bot :(', {
+            status: "online", //You can show online, idle....
+            type: "PLAYING" //PLAYING: WATCHING: LISTENING: STREAMING:
+        });
+    } else if (node_env === 'development') {
+        client.user.setActivity('??[command]. I am the test bot :o', {
+            status: "online", //You can show online, idle....
+            type: "PLAYING" //PLAYING: WATCHING: LISTENING: STREAMING:
+        });
+    }
 });
 
 client.on('message', message => {
